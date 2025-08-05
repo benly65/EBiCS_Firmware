@@ -113,7 +113,7 @@
 
 #define REGEN_CURRENT 0
 #define REGEN_CURRENT_MAX 0
-//#define ADC_BRAKE
+#define ADC_BRAKE
 
 //---------------------------------------------------------------------
 #define AUTODETECT 1
