@@ -91,6 +91,9 @@
 #define ADDR_FLASH_PAGE_61    ((uint32_t)0x0800F400) /* Base @ of Page 61, 1 Kbytes */
 #define ADDR_FLASH_PAGE_62    ((uint32_t)0x0800F800) /* Base @ of Page 62, 1 Kbytes */
 #define ADDR_FLASH_PAGE_63    ((uint32_t)0x0800FC00) /* Base @ of Page 63, 1 Kbytes */
+
+#if 0 /* 128KB map: pages 64..127 (not available on genuine 64KB STM32F103C8Tx) */
+
 #define ADDR_FLASH_PAGE_64    ((uint32_t)0x08010000) /* Base @ of Page 64, 1 Kbytes */
 #define ADDR_FLASH_PAGE_65    ((uint32_t)0x08010400) /* Base @ of Page 65, 1 Kbytes */
 #define ADDR_FLASH_PAGE_66    ((uint32_t)0x08010800) /* Base @ of Page 66, 1 Kbytes */
@@ -156,20 +159,43 @@
 #define ADDR_FLASH_PAGE_126   ((uint32_t)0x0801F800) /* Base @ of Page 126, 1 Kbytes */
 #define ADDR_FLASH_PAGE_127   ((uint32_t)0x0801FC00) /* Base @ of Page 127, 1 Kbytes */
 
+#endif  /* 128KB map: pages 64..127 (not available on genuine 64KB STM32F103C8Tx) */
+
 /* Define the size of the sectors to be used */
 #define PAGE_SIZE               (uint32_t)FLASH_PAGE_SIZE  /* Page size */
 
-/* EEPROM start address in Flash */
-#define EEPROM_START_ADDRESS  ((uint32_t)ADDR_FLASH_PAGE_126) /* EEPROM emulation start address */
+/*
+ * EEPROM start address in Flash
+ *
+ * This firmware uses flash-page based EEPROM emulation and places it at the
+ * end of the available flash. The EEPROM region must also be reserved in the
+ * linker script (STM32F103C8Tx_FLASH.ld) under the "EEPROM" memory section.
+ *
+ * Default here: STM32F103C8Tx devices that expose only 64KB (pages 0..63).
+ * In that case the last two pages are 62 and 63 (2KB total).
+ *
+ * If your board really has 128KB (often mislabelled as "C8"), you may move
+ * EEPROM to the last two pages 126/127 (at your own risk):
+ *   - set EEPROM_START_ADDRESS to ADDR_FLASH_PAGE_126
+ *   - set PAGE0_ID/PAGE1_ID to ADDR_FLASH_PAGE_126/ADDR_FLASH_PAGE_127
+ *   - ensure the 128KB page-address block above is enabled if you want the
+ *     named constants for pages 64..127
+ *   - update STM32F103C8Tx_FLASH.ld to use the 128KB FLASH length and reserve
+ *     EEPROM at 0x0801F800..0x0801FFFF
+ */
+// #define EEPROM_START_ADDRESS  ((uint32_t)ADDR_FLASH_PAGE_126) /* 128KB layout (pages 126/127) */
+#define EEPROM_START_ADDRESS  ((uint32_t)ADDR_FLASH_PAGE_62) /* 64KB layout (pages 62/63) */
 
 /* Pages 0 and 1 base and end addresses */
 #define PAGE0_BASE_ADDRESS    ((uint32_t)(EEPROM_START_ADDRESS + 0x0000))
 #define PAGE0_END_ADDRESS     ((uint32_t)(EEPROM_START_ADDRESS + (PAGE_SIZE - 1)))
-#define PAGE0_ID               ADDR_FLASH_PAGE_126
+// #define PAGE0_ID               ADDR_FLASH_PAGE_126
+#define PAGE0_ID               ADDR_FLASH_PAGE_62
 
 #define PAGE1_BASE_ADDRESS    ((uint32_t)(EEPROM_START_ADDRESS + PAGE_SIZE))
 #define PAGE1_END_ADDRESS     ((uint32_t)(EEPROM_START_ADDRESS + PAGE_SIZE + PAGE_SIZE - 1))
-#define PAGE1_ID               ADDR_FLASH_PAGE_127
+// #define PAGE1_ID               ADDR_FLASH_PAGE_127
+#define PAGE1_ID               ADDR_FLASH_PAGE_63
 
 /* Used Flash pages for EEPROM emulation */
 #define PAGE0                 ((uint16_t)0x0000)
