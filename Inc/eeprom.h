@@ -91,6 +91,9 @@
 #define ADDR_FLASH_PAGE_61    ((uint32_t)0x0800F400) /* Base @ of Page 61, 1 Kbytes */
 #define ADDR_FLASH_PAGE_62    ((uint32_t)0x0800F800) /* Base @ of Page 62, 1 Kbytes */
 #define ADDR_FLASH_PAGE_63    ((uint32_t)0x0800FC00) /* Base @ of Page 63, 1 Kbytes */
+
+#if 0 /* 128KB map: pages 64..127 (not available on genuine 64KB STM32F103C8Tx) */
+
 #define ADDR_FLASH_PAGE_64    ((uint32_t)0x08010000) /* Base @ of Page 64, 1 Kbytes */
 #define ADDR_FLASH_PAGE_65    ((uint32_t)0x08010400) /* Base @ of Page 65, 1 Kbytes */
 #define ADDR_FLASH_PAGE_66    ((uint32_t)0x08010800) /* Base @ of Page 66, 1 Kbytes */
@@ -156,20 +159,37 @@
 #define ADDR_FLASH_PAGE_126   ((uint32_t)0x0801F800) /* Base @ of Page 126, 1 Kbytes */
 #define ADDR_FLASH_PAGE_127   ((uint32_t)0x0801FC00) /* Base @ of Page 127, 1 Kbytes */
 
+#endif  /* 128KB map: pages 64..127 (not available on genuine 64KB STM32F103C8Tx) */
+
 /* Define the size of the sectors to be used */
 #define PAGE_SIZE               (uint32_t)FLASH_PAGE_SIZE  /* Page size */
 
-/* EEPROM start address in Flash */
-#define EEPROM_START_ADDRESS  ((uint32_t)ADDR_FLASH_PAGE_126) /* EEPROM emulation start address */
+/*
+ * EEPROM start address in Flash
+ *
+ * STM32F103C8Tx officially has 64KB flash. On many boards 128KB is present,
+ * but on some (including the user's controller) pages 126/127 do not exist.
+ * EEPROM emulation must use the last two pages of the 64KB map: pages 62/63.
+ *
+ * To switch back to the unofficial 128KB map (at your own risk), revert:
+ *  - EEPROM_START_ADDRESS back to ADDR_FLASH_PAGE_126
+ *  - PAGE0_ID/PAGE1_ID back to ADDR_FLASH_PAGE_126/ADDR_FLASH_PAGE_127
+ *  - and remove the #if 0 block around pages 64..127 above if desired.
+ * Also update STM32F103C8Tx_FLASH.ld to use a 128K FLASH length.
+ */
+// #define EEPROM_START_ADDRESS  ((uint32_t)ADDR_FLASH_PAGE_126) /* 128KB layout (pages 126/127) */
+#define EEPROM_START_ADDRESS  ((uint32_t)ADDR_FLASH_PAGE_62) /* 64KB layout (pages 62/63) */
 
 /* Pages 0 and 1 base and end addresses */
 #define PAGE0_BASE_ADDRESS    ((uint32_t)(EEPROM_START_ADDRESS + 0x0000))
 #define PAGE0_END_ADDRESS     ((uint32_t)(EEPROM_START_ADDRESS + (PAGE_SIZE - 1)))
-#define PAGE0_ID               ADDR_FLASH_PAGE_126
+// #define PAGE0_ID               ADDR_FLASH_PAGE_126
+#define PAGE0_ID               ADDR_FLASH_PAGE_62
 
 #define PAGE1_BASE_ADDRESS    ((uint32_t)(EEPROM_START_ADDRESS + PAGE_SIZE))
 #define PAGE1_END_ADDRESS     ((uint32_t)(EEPROM_START_ADDRESS + PAGE_SIZE + PAGE_SIZE - 1))
-#define PAGE1_ID               ADDR_FLASH_PAGE_127
+// #define PAGE1_ID               ADDR_FLASH_PAGE_127
+#define PAGE1_ID               ADDR_FLASH_PAGE_63
 
 /* Used Flash pages for EEPROM emulation */
 #define PAGE0                 ((uint16_t)0x0000)

@@ -41,8 +41,17 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 20K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 64K
+  RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 20K
+
+  /* Toggle 64KB/128KB by commenting/uncommenting ONLY the two pairs below. Do NOT create nested comments. */
+
+  /* 64KB layout (default): reserve the last 2KB for EEPROM emulation. */
+  FLASH (rx)     : ORIGIN = 0x08000000, LENGTH = 0xF800  /* 62KB, up to 0x0800F7FF */
+  EEPROM (rx)    : ORIGIN = 0x0800F800, LENGTH = 0x800   /* 2KB, pages 62/63 */
+
+  /* 128KB layout (unofficial): uncomment if your chip exposes extra flash. */
+  /* FLASH (rx)   : ORIGIN = 0x08000000, LENGTH = 0x1F800  126KB, up to 0x0801F7FF */
+  /* EEPROM (rx)  : ORIGIN = 0x0801F800, LENGTH = 0x800   2KB, pages 126/127 */
 }
 
 /* Define output sections */
