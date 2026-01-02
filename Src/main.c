@@ -298,6 +298,55 @@ int16_t external_tics_to_speedx100 (uint32_t tics);
 
 /* USER CODE BEGIN 0 */
 
+// Returns 1 when stable, 0 on timeout (startup continues anyway).
+static uint8_t torque_wait_adc_stable(void)
+{
+    uint32_t t0 = HAL_GetTick();
+    uint16_t vmin = 0xFFFFu;
+    uint16_t vmax = 0u;
+    uint16_t n = 0u;
+    uint8_t stable_windows = 0u;
+
+    while ((uint32_t)(HAL_GetTick() - t0) < TORQUE_STAB_TIMEOUT_MS) {
+
+        while (!ui8_adc_regular_flag) {
+            if ((uint32_t)(HAL_GetTick() - t0) >= TORQUE_STAB_TIMEOUT_MS) {
+                return 0u;
+            }
+        }
+
+        // Consume one regular ADC update
+#ifdef TQONAD1
+        uint16_t v = adcData[6];   // torque sensor sample
+#else
+        uint16_t v = adcData[1];   // torque sensor sample
+#endif
+        ui8_adc_regular_flag = 0u; // consume update AFTER reading adcData[]
+
+
+        if (v < vmin) vmin = v;
+        if (v > vmax) vmax = v;
+        n++;
+
+        if (n >= TORQUE_STAB_WINDOW_SAMPLES) {
+            if ((uint16_t)(vmax - vmin) <= TORQUE_STAB_RANGE_THR) {
+                stable_windows++;
+                if (stable_windows >= TORQUE_STAB_CONSEC_WINDOWS) {
+                    return 1u;
+                }
+            } else {
+                stable_windows = 0u;
+            }
+
+            // reset window
+            vmin = 0xFFFFu;
+            vmax = 0u;
+            n = 0u;
+        }
+    }
+    return 0u;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -475,10 +524,11 @@ if(MP.com_mode==Sensorless_openloop||MP.com_mode==Sensorless_startkick)MS.Obs_fl
     TIM1->CCR3 = 1023;
 
 
-
     CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE);//Disable PWM
+	
+	temp4 = 0;
 
-    HAL_Delay(200); //wait for stable conditions
+    (void)torque_wait_adc_stable(); //wait until torque ADC signal stabilises (no blind delay)
 
     for(i=0;i<32;i++){
     	while(!ui8_adc_regular_flag){}

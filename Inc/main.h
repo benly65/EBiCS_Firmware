@@ -108,6 +108,16 @@ enum com_mode {Hallsensor, Sensorless_openloop, Sensorless_startkick, Hallsensor
 
 /* USER CODE BEGIN Private defines */
 
+// Torque ADC start-up stabilisation parameters (used before averaging MP.torque_offset):
+// We wait until torque ADC signal stops "jumping" after power-up, then start averaging offset.
+// Algorithm: take TORQUE_STAB_WINDOW_SAMPLES samples, compute range=(max-min).
+// If range <= TORQUE_STAB_RANGE_THR for TORQUE_STAB_CONSEC_WINDOWS windows -> stable.
+// If not stable within TORQUE_STAB_TIMEOUT_MS -> continue anyway (fallback).
+#define TORQUE_STAB_RANGE_THR        12u   // [ADC counts] Allowed (max-min) within a window to call the signal stable.
+#define TORQUE_STAB_WINDOW_SAMPLES   64u   // [samples] Window size for min/max range calculation.
+#define TORQUE_STAB_CONSEC_WINDOWS   4u    // [windows] Number of consecutive stable windows required.
+#define TORQUE_STAB_TIMEOUT_MS       3000u // [ms] Max wait time, then proceed anyway to avoid blocking.
+
 
 
 
