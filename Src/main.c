@@ -478,7 +478,9 @@ if(MP.com_mode==Sensorless_openloop||MP.com_mode==Sensorless_startkick)MS.Obs_fl
 
     CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE);//Disable PWM
 
-    HAL_Delay(200); //wait for stable conditions
+    HAL_Delay(TORQUE_OFFSET_STARTUP_DELAY_MS); // wait before averaging ADC offsets (power-up settling)
+	
+    temp4 = 0;                                 // reset torque sum accumulator
 
     for(i=0;i<32;i++){
     	while(!ui8_adc_regular_flag){}
@@ -496,7 +498,7 @@ if(MP.com_mode==Sensorless_openloop||MP.com_mode==Sensorless_startkick)MS.Obs_fl
     ui16_ph1_offset=temp1>>5;
     ui16_ph2_offset=temp2>>5;
     ui16_ph3_offset=temp3>>5;
-	MP.torque_offset=(temp4>>5)+5;
+	MP.torque_offset = (temp4 >> 5) + MP_TORQUE_OFFSET_DELTA; // avg torque zero + noise margin
 
 #ifdef DISABLE_DYNAMIC_ADC // set  injected channel with offsets
 	 ADC1->JSQR=0b00100000000000000000; //ADC1 injected reads phase A JL = 0b00, JSQ4 = 0b00100 (decimal 4 = channel 4)
@@ -833,6 +835,8 @@ if(MP.com_mode==Sensorless_openloop||MP.com_mode==Sensorless_startkick)MS.Obs_fl
 //#endif //end NTCE
 
 			  uint16_mapped_throttle = map(adcData[1], THROTTLE_OFFSET, THROTTLE_MAX, 0,PH_CURRENT_MAX); //throttle override, no torque override in this version actually
+			  
+		
 
 #ifndef TS_MODE //normal PAS Mode
 

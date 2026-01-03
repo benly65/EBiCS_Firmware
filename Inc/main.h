@@ -106,7 +106,15 @@ enum com_mode {Hallsensor, Sensorless_openloop, Sensorless_startkick, Hallsensor
   */
 /* #define USE_FULL_ASSERT    1U */
 
+
 /* USER CODE BEGIN Private defines */
+
+
+#define TORQUE_OFFSET_STARTUP_DELAY_MS  2000u  // [ms] Delay before averaging phase & torque ADC offsets.
+#define MP_TORQUE_OFFSET_DELTA          5u     // [ADC counts] Extra offset added to measured torque zero (noise margin).
+
+// Torque override / throttle override selection is added in a later commit.
+
 
 
 
