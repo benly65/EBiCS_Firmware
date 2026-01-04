@@ -834,10 +834,15 @@ if(MP.com_mode==Sensorless_openloop||MP.com_mode==Sensorless_startkick)MS.Obs_fl
 //
 //#endif //end NTCE
 
-			  uint16_mapped_throttle = map(adcData[1], THROTTLE_OFFSET, THROTTLE_MAX, 0,PH_CURRENT_MAX); //throttle override, no torque override in this version actually
+			  //uint16_mapped_throttle = map(adcData[1], THROTTLE_OFFSET, THROTTLE_MAX, 0,PH_CURRENT_MAX); //throttle override, no torque override in this version actually
 			  
-		
-
+			  #ifdef TORQUE_OVERRIDE
+			  // Torque override: use ADC6, enabled only after (MP.torque_offset + TORQUE_OVERRIDE_OFFSET_DELTA)
+			  uint16_mapped_throttle = map(adcData[6], (MP.torque_offset + TORQUE_OVERRIDE_OFFSET_DELTA), TORQUE_MAX, 0, PH_CURRENT_MAX);
+#else
+			  // Throttle override: classic throttle input on ADC1
+			  uint16_mapped_throttle = map(adcData[1], THROTTLE_OFFSET, THROTTLE_MAX, 0, PH_CURRENT_MAX);
+#endif
 #ifndef TS_MODE //normal PAS Mode
 
 			    if (uint32_PAS_counter < PAS_TIMEOUT) int32_temp_current_target = uint16_mapped_PAS;		//set current target in torque-simulation-mode, if pedals are turning
