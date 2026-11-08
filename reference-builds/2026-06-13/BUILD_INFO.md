@@ -16,8 +16,8 @@ Source snapshot commit: 155afc0
 RU: Исходники диагностической прошивки с телеметрией UART.
 EN: Source snapshot of the diagnostic firmware with UART telemetry.
 
-RU: Побитная воспроизводимость эталонного BIN из этого коммита пока не проверена.
-EN: A byte-identical rebuild from this commit has not yet been verified.
+RU: Побитная идентичность подтверждена повторной сборкой 09.11.2026 (Ac6, GCC 7.3.1, Make 4.1, make -B all).
+EN: Byte-identical rebuild confirmed on 2026-11-09 (Ac6, GCC 7.3.1, Make 4.1, make -B all).
 
 ## Memory / Память
 
@@ -47,3 +47,4 @@ RU: Экспериментальные настройки JavaConfigurator со�
 EN: Historical JavaConfigurator settings are preserved in Git.
 The exact correspondence between June INI files and this binary
 has not yet been established.
+
