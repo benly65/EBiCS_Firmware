@@ -38,8 +38,13 @@
 
 
 
+//int printf_(const char *format, ...);
+//int sprintf_(char *buffer, const char *format, ...);
+
 int printf_(const char *format, ...);
 int sprintf_(char *buffer, const char *format, ...);
+int snprintf_(char *buffer, unsigned int maxlen, const char *format, ...);
+
 
 /*
 +=============================================================================+
@@ -50,8 +55,12 @@ int sprintf_(char *buffer, const char *format, ...);
 
 
 void putc_UART1 (char);         // blocking put char; used by printf_()
-void putc_strg(char);          // the put() function for sprintf()
-char *SPRINTF_buffer;          //
+void putc_strg(char);          // the put() function for sprintf()                       //void putc_strg(char); 
+char *SPRINTF_buffer;          //     //char *SPRINTF_buffer;
+char *SPRINTF_end;     // 0 => без лимита, иначе buffer+(maxlen-1)
+int   SPRINTF_count;   // сколько реально записали
+
+
 
 static int vfprintf_(void (*) (char), const char *format, va_list arg); //generic print
 void long_itoa (long, int, int, void (*) (char)); //heavily used by printf_()
@@ -102,20 +111,56 @@ int printf_(const char *format, ...)
 	return 0;
 }
 
+//int sprintf_(char *buffer, const char *format, ...)
+//{
+//	va_list arg;
+//
+//	SPRINTF_buffer=buffer;	 //Pointer auf einen String in Speicherzelle abspeichern
+//
+//	va_start(arg, format);
+//	vfprintf_((&putc_strg), format, arg);
+//	va_end(arg);
+//
+//	*SPRINTF_buffer ='\0';             // append end of string
+//
+//	return 0;
+//}
+
+
 int sprintf_(char *buffer, const char *format, ...)
 {
-	va_list arg;
+    va_list arg;
 
-	SPRINTF_buffer=buffer;	 //Pointer auf einen String in Speicherzelle abspeichern
+    SPRINTF_buffer = buffer;
+    SPRINTF_end    = 0;     // без лимита
+    SPRINTF_count  = 0;
 
-	va_start(arg, format);
-	vfprintf_((&putc_strg), format, arg);
-	va_end(arg);
+    va_start(arg, format);
+    vfprintf_((&putc_strg), format, arg);
+    va_end(arg);
 
-	*SPRINTF_buffer ='\0';             // append end of string
-
-	return 0;
+    *SPRINTF_buffer = '\0';
+    return SPRINTF_count;
 }
+
+int snprintf_(char *buffer, unsigned int maxlen, const char *format, ...)
+{
+    va_list arg;
+
+    if (maxlen == 0) return 0;
+
+    SPRINTF_buffer = buffer;
+    SPRINTF_end    = buffer + (maxlen - 1);   // ВАЖНО: maxlen-1
+    SPRINTF_count  = 0;
+
+    va_start(arg, format);
+    vfprintf_((&putc_strg), format, arg);
+    va_end(arg);
+
+    *SPRINTF_buffer = '\0';                   // гарантированный терминатор
+    return SPRINTF_count;
+}
+
 
 
 /*
@@ -124,12 +169,29 @@ int sprintf_(char *buffer, const char *format, ...)
 +=============================================================================+
 */
 // putc_strg() is the putc()function for sprintf_()
+//void putc_strg(char character)                    //                                     //void putc_strg(char character)
+//{                                               //                                      //{                                                                                                   
+//	*SPRINTF_buffer = (char)character;	// just add the character to buffer               //	*SPRINTF_buffer = (char)character;
+//	 SPRINTF_buffer++;                                                                    //	 SPRINTF_buffer++;
+//                                                                                            //
+// }                                                                                           //}
+
 void putc_strg(char character)
 {
-	*SPRINTF_buffer = (char)character;	// just add the character to buffer
-	 SPRINTF_buffer++;
-
+    if (SPRINTF_end) {
+        // лимитированный режим
+        if (SPRINTF_buffer < SPRINTF_end) {
+            *SPRINTF_buffer++ = (char)character;
+            SPRINTF_count++;
+        }
+        // иначе отбрасываем символ (но не портим память)
+    } else {
+        // старый режим без лимита
+        *SPRINTF_buffer++ = (char)character;
+        SPRINTF_count++;
+    }
 }
+
 
 /*--------------------------------------------------------------------------------+
  * vfprintf_()

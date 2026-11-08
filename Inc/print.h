@@ -10,7 +10,7 @@
 #define _print
 
 int printf_(const char *format, ...);
-int sprintf_(char *buffer, const char *format, ...);
+ int snprintf_(char *buffer, unsigned int maxlen, const char *format, ...);     //int sprintf_(char *buffer, const char *format, ...);
 
 
 

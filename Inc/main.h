@@ -89,12 +89,12 @@
 
 
 //#define NCTE
-#define LEGALFLAG
-#define BATTERYVOLTAGE_MAX 53000
-#define R_TEMP_PULLUP 0
-#define TORQUE_OFFSET 1535
+//#define LEGALFLAG
+#define BATTERYVOLTAGE_MAX 42000
+#define R_TEMP_PULLUP 3000
+#define TORQUE_OFFSET 1000
 #define TORQUE_MAX 3000
-#define SPEC_ANGLE -1550960412L //-1312351118L		//Shengyi Heckmotor aus Fischer ETH1606 per trial and error
+//#define SPEC_ANGLE -1550960412L //-1312351118L		//Shengyi Heckmotor aus Fischer ETH1606 per trial and error
 #define FILTER_DELAY 59652323<<4	 //1073741824L	// for angle correction of i_alfa + i_beta
 enum state {Stop, SixStep, Regen, Running, BatteryCurrentLimit, Interpolation, PLL, IdleRun, Sensorless, OpenLoop};
 enum com_mode {Hallsensor, Sensorless_openloop, Sensorless_startkick, Hallsensor_Sensorless};
@@ -110,12 +110,14 @@ enum com_mode {Hallsensor, Sensorless_openloop, Sensorless_startkick, Hallsensor
 /* USER CODE BEGIN Private defines */
 
 
-#define TORQUE_OFFSET_STARTUP_DELAY_MS  2000u  // [ms] Delay before averaging phase & torque ADC offsets.
-#define MP_TORQUE_OFFSET_DELTA          5u     // [ADC counts] Extra offset added to measured torque zero (noise margin).
+// Delay before averaging phase & torque ADC offsets.
+// NOTE: torque sensor output settles after power-up; tune this to your hardware.
+#define TORQUE_OFFSET_STARTUP_DELAY_MS  3000u   // [ms]
+#define MP_TORQUE_OFFSET_DELTA          15u     // [ADC counts] Extra offset added to measured torque zero (noise margin).
 
-#define TORQUE_OVERRIDE_OFFSET_DELTA      150u   // [ADC counts] Start threshold: MP.torque_offset + delta.
+#define TORQUE_OVERRIDE_OFFSET_DELTA      200u   // [ADC counts] Start threshold: MP.torque_offset + delta.
 // Uncomment to use ADC6 as 'torque override' input. If not defined, ADC1 throttle is used.
-// #define TORQUE_OVERRIDE
+#define TORQUE_OVERRIDE
 
 
 

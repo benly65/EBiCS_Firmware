@@ -180,7 +180,7 @@ int16_t i16_cosinus=0;
 q31_t q31_delta_teta;
 q31_t q31_delta_teta_obs;
 
-char buffer[100];
+char buffer[128]; //  char buffer[100];///////////////////////////
 char char_dyn_adc_state_old=1;
 const uint8_t assist_factor[10]={0, 51, 102, 153, 204, 255, 255, 255, 255, 255};
 const uint8_t assist_profile[2][6]= {	{0,10,20,30,45,48},
@@ -704,7 +704,7 @@ if(MP.com_mode==Sensorless_openloop||MP.com_mode==Sensorless_startkick)MS.Obs_fl
 
 #if (DISPLAY_TYPE == DISPLAY_TYPE_DEBUG && defined(FAST_LOOP_LOG))
 		if(ui8_debug_state==3 && ui8_UART_TxCplt_flag){
-	        sprintf_(buffer, "%d, %d, %d, %d, %d, %d\r\n", e_log[k][0], e_log[k][1], e_log[k][2],e_log[k][3],e_log[k][4],e_log[k][5]); //>>24
+	     snprintf_(buffer, sizeof(buffer), "%d, %d, %d, %d, %d, %d\r\n", e_log[k][0], e_log[k][1], e_log[k][2],e_log[k][3],e_log[k][4],e_log[k][5]);            //sprintf_(buffer, "%d, %d, %d, %d, %d, %d\r\n", e_log[k][0], e_log[k][1], e_log[k][2],e_log[k][3],e_log[k][4],e_log[k][5]); //>>24
 			i=0;
 			while (buffer[i] != '\0')
 			{i++;}
@@ -977,7 +977,7 @@ if(MP.com_mode==Sensorless_openloop||MP.com_mode==Sensorless_startkick)MS.Obs_fl
 			  CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE);
 		  }
 #if (R_TEMP_PULLUP)
-		  MS.Temperature = T_NTC(adcData[6]); //Thank you Hendrik ;-)
+		  MS.Temperature = T_NTC(adcData[5]); //Thank you Hendrik ;-)
 #else
 		  MS.Temperature=25;
 #endif
@@ -1024,16 +1024,18 @@ if(MP.com_mode==Sensorless_openloop||MP.com_mode==Sensorless_startkick)MS.Obs_fl
 		  //print values for debugging
 
 
-		  sprintf_(buffer, "%d, %d, %d, %d, %d, %d, %d, %u, %d\r\n",
-				  adcData[1],
-				  adcData[6],
-				  MS.i_q_setpoint,
-				  uint32_PAS,
-				  MS.Battery_Current,
-				  int32_temp_current_target ,
-				  MS.i_q,
-				  uint32_SPEEDx100_cumulated>>SPEEDFILTER,
-				  MS.system_state);
+		 snprintf_(buffer, sizeof(buffer), "%d, %d, %d, %d, %d, %d, %d, %u, %d, %d\r\n",   //sprintf_(buffer, "%d, %d, %d, %d, %d, %d, %d, %u, %d, %d\r\n",
+         adcData[6],                          // 1
+         ui16_torque,                         // 2
+         MP.torque_offset,                    // 3
+         uint32_torque_cumulated,             // 4
+         uint32_PAS_counter,                  // 5
+         int32_temp_current_target,           // 6
+         MS.i_q_setpoint,                     // 7
+         uint32_SPEEDx100_cumulated >> SPEEDFILTER, // 8
+         MS.system_state,                     // 9 (НЕ СДВИГАЕМ!)
+         MS.Battery_Current);                 // 10 (mA)
+
 		  // sprintf_(buffer, "%d, %d, %d, %d, %d, %d, %d\r\n",(uint16_t)adcData[0],(uint16_t)adcData[1],(uint16_t)adcData[2],(uint16_t)adcData[3],(uint16_t)(adcData[4]),(uint16_t)(adcData[5]),(uint16_t)(adcData[6])) ;
 		  // sprintf_(buffer, "%d, %d, %d, %d, %d, %d\r\n",tic_array[0],tic_array[1],tic_array[2],tic_array[3],tic_array[4],tic_array[5]) ;
 		  i=0;
@@ -1510,7 +1512,7 @@ static void MX_USART1_UART_Init(void)
 #elif (DISPLAY_TYPE == DISPLAY_TYPE_BAFANG)
   huart1.Init.BaudRate = 1200;
 #else
-  huart1.Init.BaudRate = 56000;
+  huart1.Init.BaudRate = 57600;  //(56000)
 #endif
 
 

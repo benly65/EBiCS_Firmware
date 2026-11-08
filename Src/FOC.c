@@ -209,12 +209,6 @@ void FOC_calculation(int16_t int16_i_as, int16_t int16_i_bs, q31_t q31_teta, int
 	q31_i_d_fil += q31_i_d;
 	MS_FOC->i_d=q31_i_d_fil>>4;
 
-	if(q31_i_q>(PH_CURRENT_MAX<<2)){
-		CLEAR_BIT(TIM1->BDTR, TIM_BDTR_MOE);		//disable PWM if overcurrent detected
-		while(1){}						//stay here until hard reset
-	}
-
-
 	runPIcontrol();
 
 	if (MP_FOC->com_mode==Sensorless_openloop&&MS_FOC->Obs_flag) {
