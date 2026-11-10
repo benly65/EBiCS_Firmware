@@ -410,6 +410,10 @@ static void KM_901U_Service(KINGMETER_t* KM_ctx)
             (KM_Message[3] < 10U || KM_Message[9] >= 64U)) continue;
         if (KM_Message[2] == 0x54U && KM_Message[3] < 1U) continue;
 
+        /* Responses use a shared static DMA buffer: never modify it in flight. */
+        if (huart1.gState != HAL_UART_STATE_READY &&
+            (KM_Message[2] == 0x52U || KM_Message[2] == 0x53U)) continue;
+
         switch(KM_Message[2])
     			        {
     			            case 0x52:      // Operation mode
