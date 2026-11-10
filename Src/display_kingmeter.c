@@ -357,49 +357,60 @@ static void KM_618U_Service(KINGMETER_t* KM_ctx)
  ***************************************************************************************************/
 static void KM_901U_Service(KINGMETER_t* KM_ctx)
 {
-	static uint8_t  TxBuffer[KM_MAX_TXBUFF];
-	static uint8_t  m;
-    static uint8_t  last_pointer_position;
-    static uint8_t  recent_pointer_position;
-
-
+    static uint8_t TxBuffer[KM_MAX_TXBUFF];
+    static uint8_t KM_Message[32];
+    static uint8_t last_pointer_position;
+    static uint8_t frame_length;
+    uint8_t recent_pointer_position;
+    uint8_t byte;
+    uint8_t m;
+    uint8_t TxCnt;
     uint16_t CheckSum;
+    uint16_t expected_length;
 
-    static uint8_t  TxCnt;
-    static uint8_t  Rx_message_length;
-    static uint8_t  KM_Message[32];
+    /* UART1 RX uses a 64-byte circular DMA buffer. Preserve partial frames
+       across UART IDLE events; never treat one IDLE event as one packet. */
+    recent_pointer_position = (uint8_t)(64U - DMA1_Channel5->CNDTR);
+    if (recent_pointer_position == 64U) recent_pointer_position = 0U;
 
-    recent_pointer_position = 64-DMA1_Channel5->CNDTR;
+    while (last_pointer_position != recent_pointer_position)
+    {
+        byte = KM_ctx->RxBuff[last_pointer_position];
+        last_pointer_position = (uint8_t)((last_pointer_position + 1U) & 63U);
 
-    if(recent_pointer_position>last_pointer_position){
-    	Rx_message_length=recent_pointer_position-last_pointer_position;
-    	//printf_("groesser %d, %d, %d \n ",recent_pointer_position,last_pointer_position, Rx_message_length);
-    	//HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-    	memcpy(KM_Message,KM_ctx->RxBuff+last_pointer_position,Rx_message_length);
-    	//HAL_UART_Transmit(&huart3, (uint8_t *)&KM_Message, Rx_message_length,50);
-	}
-    else {
-    	Rx_message_length=recent_pointer_position+64-last_pointer_position;
-     	memcpy(KM_Message,KM_ctx->RxBuff+last_pointer_position,64-last_pointer_position);
-        memcpy(KM_Message+64-last_pointer_position,KM_ctx->RxBuff,recent_pointer_position);
-      //  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+        if (frame_length == 0U && byte != 0x3AU) continue;
+        if (frame_length >= sizeof(KM_Message)) frame_length = 0U;
+        KM_Message[frame_length++] = byte;
 
+        if (frame_length < 4U) continue;
+        expected_length = (uint16_t)KM_Message[3] + 8U;
+        if (expected_length > sizeof(KM_Message) || expected_length < 8U)
+        {
+            frame_length = 0U;
+            continue;
+        }
+        if (frame_length < expected_length) continue;
+        frame_length = 0U;
 
-    }
-    last_pointer_position=recent_pointer_position;
-    //HAL_UART_Transmit(&huart3, (uint8_t *)&KM_Message, Rx_message_length,50);
+        /* Frame: 3A address command payload_length payload checksum16 0D 0A */
+        if (KM_Message[expected_length - 2U] != 0x0DU ||
+            KM_Message[expected_length - 1U] != 0x0AU) continue;
+        CheckSum = 0U;
+        for (m = 1U; m < (uint8_t)(4U + KM_Message[3]); ++m)
+            CheckSum = (uint16_t)(CheckSum + KM_Message[m]);
+        CheckSum = (uint16_t)(CheckSum -
+            ((uint16_t)KM_Message[4U + KM_Message[3]] |
+             ((uint16_t)KM_Message[5U + KM_Message[3]] << 8)));
+        if (CheckSum != 0U) continue;
+        TxCnt = 0U;
 
+        /* Require enough payload bytes for each command before indexing. */
+        if (KM_Message[2] == 0x52U && KM_Message[3] < 2U) continue;
+        if (KM_Message[2] == 0x53U &&
+            (KM_Message[3] < 10U || KM_Message[9] >= 64U)) continue;
+        if (KM_Message[2] == 0x54U && KM_Message[3] < 1U) continue;
 
-
-
-            	CheckSum = 0x0000;
-            	for(m=1; m<(4+KM_Message[3]); m++)
-            		{
-            		CheckSum = CheckSum + KM_Message[m];            // Calculate CheckSum
-            		}
-           		CheckSum-=(KM_Message[m]+((KM_Message[m+1])<<8));
-
-     			switch(KM_Message[2])
+        switch(KM_Message[2])
     			        {
     			            case 0x52:      // Operation mode
     			            	if(!CheckSum) //low-byte and high-byte
@@ -533,7 +544,9 @@ static void KM_901U_Service(KINGMETER_t* KM_ctx)
     			            TxBuffer[TxCnt+2] = 0x0D;
     			            TxBuffer[TxCnt+3] = 0x0A;
 
-    			            HAL_UART_Transmit_DMA(&huart1, (uint8_t *)&TxBuffer, TxCnt+4);
+    			            /* Do not overwrite TxBuffer while a previous DMA send is active. */
+                            if (huart1.gState == HAL_UART_STATE_READY)
+                                (void)HAL_UART_Transmit_DMA(&huart1, TxBuffer, TxCnt+4);
     			            //HAL_UART_Transmit(&huart3, (uint8_t *)&TxBuffer, TxCnt+4,50);
     			            //printf_("%d, %d \n ",TxCnt+4,KM_Message[2]);
     			        }
@@ -542,6 +555,7 @@ static void KM_901U_Service(KINGMETER_t* KM_ctx)
 
 
 
+    } /* DMA byte-processing loop */
     }
 
 
